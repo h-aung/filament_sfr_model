@@ -139,7 +139,7 @@ class Cooling(two_d_table):
 C=Cooling(file='CIE_cool_M5.txt',cooling_nH2=True)
 
 def virial_values_filament(M, z, cosmo, mdef = '40m', quantity='pressure', mu = 0.59):
-    '''Calculate the virial/normalized values for different quantities of halos.
+    '''Calculate the virial/normalized values for different quantities of filaments.
     Parameters:
        M: filament mass per unit length in Msun/kpc unit
        z: redshift
@@ -194,7 +194,7 @@ def virial_values_filament(M, z, cosmo, mdef = '40m', quantity='pressure', mu = 
         raise ValueError("Unsupported quantity")
 
 def filament_profile(Mv, z, cosmo, mdef = '40m', mu = 0.59, model='isothermal', r=None, **kwargs):
-    '''Calculate the virial/normalized values for different quantities of halos.
+    '''Calculate the profiles for different quantities of filaments.
     Parameters:
        M: filament mass per unit length in Msun/kpc unit
        z: redshift
