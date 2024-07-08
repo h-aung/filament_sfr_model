@@ -3,8 +3,6 @@ import numpy as np
 from scipy import interpolate as interp
 from astropy import units as u
 from astropy import constants as c
-from scipy import optimize as opt
-#import customlib as cl
 from scipy.integrate import solve_ivp
 
 def safelog(f):
@@ -61,7 +59,7 @@ class two_d_table:
 
         self.ybound=np.array([min(y),max(y)])
 
-    def __call__(self,x,y):
+    def __call__(self,x,y, grid=False):
         if self.x_interp_log:
             xx=safelog(x)
         else:
@@ -70,7 +68,7 @@ class two_d_table:
             yy=safelog(y)
         else:
             yy=y
-        zz=self.table(yy,xx)
+        zz=self.table(yy,xx, grid=grid)
         if self.z_interp_log:
             z=10**zz
         else:
@@ -92,22 +90,6 @@ class two_d_table:
         else:
             return f
 
-from scipy import interpolate as interp
-from astropy import units as u
-from astropy import constants as c
-from scipy import optimize as opt
-
-# constants
-eV_to_erg = 1.60217733e-12
-eV_to_gr = eV_to_erg/c.c**2
-N_A=c.N_A.to(u.mol**(-1)).value
-k_B=c.k_B.cgs.value
-a_radiation_constant=7.5657e-15/eV_to_erg #eV.cm^-3.K^-4
-Msolar=c.M_sun.to(u.g).value
-megayear=u.megayear.to(u.s)
-year=u.year.to(u.s)
-pc=u.pc.to(u.cm)
-kpc=1000*pc
 
 class Cooling(two_d_table):
     'Return Sutherland and Dopita cooling by interpolating CIE table'
@@ -115,22 +97,29 @@ class Cooling(two_d_table):
         super().__init__(file,x_in_log,y_in_log,z_in_log,x_interp_log,y_interp_log,z_interp_log,bound_val)
         self.cooling_nH2=cooling_nH2
 
-    def Lambda(self,zmet,temp):
-        return super().__call__(zmet,temp)
+    def Lambda(self,zmet,temp, grid=False):
+        return super().__call__(zmet,temp, grid=grid)
 
-    def Lambda_units(self,zmet,temp):
-        res=self.Lambda(zmet,temp.to(u.K).value)
+    def Lambda_units(self,zmet,temp, grid=False):
+        ''' Usage: Lambda_units(metallicity, temperature, grid)
+        metallicity is solar metallicity.
+        temperature is in astropy unit (energy or T)
+        grid=True if you want to make grid of metallicity and temperature. False by default when using with array.
+        Return Lambda in astropy units. 
+        '''
+        res=self.Lambda(zmet,temp.to(u.K).value, grid=grid)
         res=res*u.erg/u.s*u.cm**3
         return res
 
-    def macroscopic_cooling(self,mcg,comp):
+    def macroscopic_cooling(self,mcg,comp, grid=False):
         if comp.baryonic_cooling:
             #returns erg/sec/gram
+            N_A=c.N_A.to(u.mol**(-1)).value
             if self.cooling_nH2:
                 prefactor=(N_A*mcg.nHnp)**2
             else:
                 prefactor=(N_A/mcg.mu*mcg.chi)**2
-            lam=(self.Lambda(mcg.zmetal,comp.Temperature(mcg)))*prefactor*mcg.dens
+            lam=(self.Lambda(mcg.zmetal,comp.Temperature(mcg), grid=grid))*prefactor*mcg.dens
             #print('Cooling:Z,T,dens,lam=',mcg.zmetal,comp.Temperature(mcg),mcg.dens,lam)
             return lam
         else:
@@ -196,7 +185,7 @@ def virial_values_filament(M, z, cosmo, mdef = '40m', quantity='pressure', mu = 
 def filament_profile(Mv, z, cosmo, mdef = '40m', mu = 0.59, model='isothermal', r=None, **kwargs):
     '''Calculate the profiles for different quantities of filaments.
     Parameters:
-       M: filament mass per unit length in Msun/kpc unit
+       Mv: filament mass per unit length in Msun/kpc unit
        z: redshift
        cosmo: astropy cosmology object
           Example: from astropy.cosmology import Planck15 as cosmo
