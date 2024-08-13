@@ -167,6 +167,7 @@ def halo_profile(Mv, z, cosmo, mdef = 'vir', c_nfw=None, mu = 0.59, r=None, conc
             print("    Colossus does not have cosmology of similar name. Set to Planck18 by default.\n"\
             +"    Use colossus.cosmology.cosmology.setCosmology(your_cosmology) in run time to overwrite.")
         c_nfw = concentration.concentration(Mv.to('Msun').value*cosmo.h, mdef, z, model=conc_model)
+        print("    No concentration for NFW given. Using "+conc_model+" model from colossus.")
 
     rhogas = rho_gas(rads, Mv, R, z, c_nfw, cbf).to('g/cm3')
     norm_temp = sig2_tot(rads, Mv, R, z, c_nfw)
